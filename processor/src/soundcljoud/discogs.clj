@@ -43,5 +43,5 @@
                      :image cover_image
                      :year year
                      :tracks (map (fn [{:keys [title position]}]
-                                    {:title title, :track position})
+                                    {:title title, :number position})
                                   tracklist)})))
