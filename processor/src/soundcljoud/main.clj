@@ -34,8 +34,5 @@
 
 (defn process-album [dir]
   (let [info (album-info dir)
-        tmpdir (fs/create-temp-dir)]
-    (doseq [track (:tracks album-info)]
-      (audio/ogg->wav track tmpdir)
-      (audio/wav->mp3 track tmpdir))
-    info))
+        tmpdir (fs/create-temp-dir {:prefix "soundcljoud."})]
+    (update info :tracks (partial map #(process-track % tmpdir)))))

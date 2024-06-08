@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss version="2.0"
+     xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"
+     xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <atom:link
+        href="{{base-url}}/{{album|urlescape}}/album.rss"
+        rel="self"
+        type="application/rss+xml"/>
+    <title>{{artist}} - {{album}}</title>
+    <link>{{link}}</link>
+    <pubDate>{{date}}</pubDate>
+    <lastBuildDate>{{date}}</lastBuildDate>
+    <ttl>60</ttl>
+    <language>en</language>
+    <copyright>All rights reserved</copyright>
+    <webMaster>jmglov@jmglov.net</webMaster>
+    <description>Album: {{artist}} - {{album}}</description>
+    <itunes:subtitle>Album: {{artist}} - {{album}}</itunes:subtitle>
+    <itunes:owner>
+      <itunes:name>{{owner-name}}</itunes:name>
+      <itunes:email>{{owner-email}}</itunes:email>
+    </itunes:owner>
+    <itunes:author>{{artist}}</itunes:author>
+    <itunes:explicit>no</itunes:explicit>
+    <itunes:image href="{{image}}"/>
+    <image>
+      <url>{{image}}</url>
+      <title>{{artist}} - {{album}}</title>
+      <link>{{link}}</link>
+    </image>
+    {% for track in tracks %}
+    <item>
+      <itunes:title>{{track.title}}</itunes:title>
+      <title>{{track.title}}</title>
+      <itunes:author>{{artist}}</itunes:author>
+      <enclosure
+          url="{{base-url}}/{{album|urlescape}}/{{track.mp3-filename|urlescape}}"
+          length="{{track.mp3-size}}" type="audio/mpeg" />
+      <pubDate>{{date}}</pubDate>
+      <itunes:duration>{{track.duration}}</itunes:duration>
+      <itunes:episode>{{track.number}}</itunes:episode>
+      <itunes:episodeType>full</itunes:episodeType>
+      <itunes:explicit>false</itunes:explicit>
+    </item>
+    {% endfor %}
+  </channel>
+</rss>
