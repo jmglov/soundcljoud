@@ -36,13 +36,16 @@
 
   <div id="container">
     <h1>Soundcljoud</h1>
-    <figure>
-      <figcaption id="track-name">Track name</figcaption>
-      <audio controls
-        src="/albums/Garth+Brooks/Fresh+Horses/01+-+Garth+Brooks+-+The+Old+Stuff.mp3">
-      </audio>
-    </figure>
-</div>
+    <div id="player" style="display: none;">
+      <div width="75%">
+        <img src="" alt="" />
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 5px; width: 25%">
+        <audio controls src=""></audio>
+        <div id="tracks" style="display: flex; flex-direction: column; gap: 3px;"></div>
+        </div>
+    </div>
+  </div>
 </body>
 
 </html>
