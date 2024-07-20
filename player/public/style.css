@@ -1,0 +1,49 @@
+body {
+  font:
+    1.2em Helvetica,
+    Arial,
+    sans-serif;
+  margin: 20px;
+  padding: 0;
+}
+
+img {
+  max-width: 100%;
+}
+
+#wrapper {
+  max-width: 960px;
+  margin: 2em auto;
+}
+
+#controls {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+@media screen and (min-width: 900px) {
+  #wrapper {
+    display: flex;
+  }
+
+  #player {
+    display: flex;
+    gap: 3%;
+  }
+
+  #cover-image {
+    margin-right: 5%;
+    max-width: 60%;
+  }
+
+  #controls {
+    width: 25%;
+  }
+}

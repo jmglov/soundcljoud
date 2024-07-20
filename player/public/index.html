@@ -26,23 +26,15 @@
 </head>
 
 <body>
-    <!--[if lt IE 8]>
-      <p class="browserupgrade">
-      You are using an <strong>outdated</strong> browser. Please
-      <a href="http://browsehappy.com/">upgrade your browser</a> to improve
-      your experience.
-      </p>
-    <![endif]-->
-
-  <div id="container">
-    <h1>Soundcljoud</h1>
-    <div id="player" style="display: none;">
-      <div width="75%">
+  <h1>Soundcljoud</h1>
+  <div id="wrapper" style="display: none;">
+    <div id="player">
+      <div class="cover-image">
         <img src="" alt="" />
       </div>
-      <div style="display: flex; flex-direction: column; gap: 5px; width: 25%">
+      <div id="controls">
         <audio controls src=""></audio>
-        <div id="tracks" style="display: flex; flex-direction: column; gap: 3px;"></div>
+        <div id="tracks" style=""></div>
         </div>
     </div>
   </div>

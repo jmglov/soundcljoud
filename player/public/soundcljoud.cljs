@@ -1,40 +1,39 @@
 (ns soundcljoud
   (:require [promesa.core :as p]))
 
-(defn log [msg obj]
-  (js/console.log msg obj))
+(def state (atom nil))
+
+(defn log
+  ([msg]
+   (log msg nil))
+  ([msg obj]
+   (if obj
+     (js/console.log msg obj)
+     (js/console.log msg))
+   obj))
 
 (defn get-el [selector]
   (if (instance? js/HTMLElement selector)
     selector  ; already an element; just return it
     (js/document.querySelector selector)))
 
+(defn set-children! [el children]
+  (.replaceChildren el)
+  (doseq [child children]
+    (.appendChild el child))
+  el)
+
 (defn set-styles! [el styles]
   (set! (.-style el) styles))
 
-(defn append-children! [id children]
-  (let [children (if (sequential? children) children [children])  ; handle single child
-        el (get-el id)]
-    (doseq [child children]
-      (.appendChild el child))
-    el))
-
-(defn remove-children! [id]
-  (let [el (get-el id)]
-    (while (.-firstChild el)
-      (.removeChild el (.-lastChild el)))
-    el))
-
-(defn set-children! [id children]
-  (-> (remove-children! id)
-      (append-children! children)))
+(defn parse-xml [xml-str]
+  (.parseFromString (js/window.DOMParser.) xml-str "text/xml"))
 
 (defn fetch-xml [path]
-  (log "Fetching path:" path)
-  (let [parse #(.parseFromString (js/window.DOMParser.) % "text/xml")]
-    (p/-> (js/fetch (js/Request. path))
-          (.text)
-          parse)))
+  (p/->> (js/fetch (js/Request. path))
+         (.text)
+         parse-xml
+         (log "Fetched XML:")))
 
 (defn xml-get [el k]
   (-> el
@@ -57,47 +56,62 @@
    :image (xml-get-attr xml "image" "href")
    :tracks (->> (.querySelectorAll xml "item")
                 (map ->track)
-                (sort-by :number))})
+                (sort-by :number))
+   :paused? true})
 
 (defn load-album [path]
   (p/-> (fetch-xml path) ->album))
 
-(defn play-track! [{:keys [number src] :as track}]
-  (log "Playing track" (clj->js track))
-  (let [track-spans (seq (.-children (get-el "#tracks")))]
+(defn activate-track! [{:keys [number src] :as track}]
+  (log "Activating track:" (clj->js track))
+  (let [track-spans (seq (.-children (get-el "#tracks")))
+        audio-el (get-el "audio")
+        {:keys [paused?]} @state]
     (doseq [span track-spans]
       (set-styles! span "font-weight: normal;"))
     (-> track-spans
         (nth (dec number))
-        (set-styles! "font-weight: bold;")))
-  (set! (.-src (get-el "audio")) src))
+        (set-styles! "font-weight: bold;"))
+    (set! (.-src audio-el) src)
+    (when-not paused?
+      (.play audio-el)))
+  (swap! state assoc :active-track number)
+  track)
 
-(defn track->span [track]
-  (let [span (js/document.createElement "span")
-        {:keys [number title]} track]
+(defn track->span [{:keys [number title] :as track}]
+  (let [span (js/document.createElement "span")]
     (set! (.-innerHTML span) (str number ". " title))
-    (.addEventListener span "click" (partial play-track! track))
+    (.addEventListener span "click" (partial activate-track! track))
     span))
 
-(defn display-tracks! [tracks]
-  (->> tracks
-       (map track->span)
-       (set-children! "#tracks")))
+(defn display-album! [{:keys [title image tracks] :as album}]
+  (let [header (get-el "h1")
+        cover (get-el ".cover-image > img")
+        wrapper (get-el "#wrapper")]
+    (set! (.-innerHTML header) title)
+    (set! (.-src cover) image)
+    (->> tracks
+         (map track->span)
+         (set-children! (get-el "#tracks")))
+    (set-styles! wrapper "display: flex;")
+    album))
 
-(defn display-album! [{:keys [image title tracks] :as album}]
-  (let [img (get-el "img")]
-    (set! (.-src img) image)
-    (set! (.-alt img) title))
-  (let [display-title (str "Soundcljoud: " title)]
-    (set! (.-innerHTML (get-el "h1")) display-title)
-    (set! (.-title js/document) display-title))
-  (set-styles! (get-el "#player") "display: flex; gap: 3%;")
-  (display-tracks! tracks)
-  album)
+(defn advance-track! []
+  (let [{:keys [active-track album]} @state
+        {:keys [tracks]} album
+        last-track? (= active-track (count tracks))]
+    (when-not last-track?
+      (activate-track! (nth tracks active-track)))))
 
-(defn load-ui! [base-path]
-  (p/let [album (load-album (str base-path "album.rss"))]
+(defn load-ui! [dir]
+  (p/let [album (load-album (str dir "/album.rss"))]
     (display-album! album)
-    (play-track! (-> album :tracks first))))
-
-(load-ui! "/albums/Garth+Brooks/Fresh+Horses/")
+    (reset! state {:paused? true, :album album})
+    (->> album
+         :tracks
+         first
+         activate-track!)
+    (.addEventListener (get-el "audio") "play"
+                       #(swap! state assoc :paused? false))
+    (.addEventListener (get-el "audio") "ended"
+                       advance-track!)))
