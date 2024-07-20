@@ -4,7 +4,7 @@
      xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <atom:link
-        href="{{base-url}}/{{album|urlescape}}/album.rss"
+        href="{{base-url}}/{{artist|urlescape}}/{{album|urlescape}}/album.rss"
         rel="self"
         type="application/rss+xml"/>
     <title>{{artist}} - {{album}}</title>
@@ -14,7 +14,7 @@
     <ttl>60</ttl>
     <language>en</language>
     <copyright>All rights reserved</copyright>
-    <webMaster>jmglov@jmglov.net</webMaster>
+    <webMaster>{{owner-email}}</webMaster>
     <description>Album: {{artist}} - {{album}}</description>
     <itunes:subtitle>Album: {{artist}} - {{album}}</itunes:subtitle>
     <itunes:owner>
@@ -35,7 +35,7 @@
       <title>{{track.title}}</title>
       <itunes:author>{{artist}}</itunes:author>
       <enclosure
-          url="{{base-url}}/{{album|urlescape}}/{{track.mp3-filename|urlescape}}"
+          url="{{base-url}}/{{artist|urlescape}}/{{album|urlescape}}/{{track.mp3-filename|urlescape}}"
           length="{{track.mp3-size}}" type="audio/mpeg" />
       <pubDate>{{date}}</pubDate>
       <itunes:duration>{{track.duration}}</itunes:duration>

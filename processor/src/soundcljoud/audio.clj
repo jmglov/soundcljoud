@@ -40,7 +40,8 @@
                      "-q:a" "2"  ; dynamic bitrate averaging 192 KB/s
                      "-y"  ; overwrite existing files without prompting
                      mp3-file]
-        id3v2-args ["id3v2" "-a" artist "-A" album "-t" title "-y" year "-T" track
+        id3v2-args ["id3v2"
+                    "-a" artist "-A" album "-t" title "-y" year "-T" number
                     mp3-file]]
     (println (format "Converting %s -> %s" wav-file mp3-file))
     (apply println (map str ffmpeg-args))
@@ -48,7 +49,7 @@
     (println "Writing ID3 tag")
     (apply println id3v2-args)
     (apply p/shell (map str id3v2-args))
-    (-> track
-        (assoc :mp3-filename mp3-file)
-        (assoc :duration (mp3-duration mp3-file))
-        (assoc :mp3-size (fs/size mp3-file)))))
+    (assoc track
+           :mp3-filename mp3-file
+           :duration (mp3-duration mp3-file)
+           :mp3-size (fs/size mp3-file))))

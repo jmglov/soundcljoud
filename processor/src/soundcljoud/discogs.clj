@@ -33,15 +33,21 @@
                            :release_title album
                            :token token}}))
 
-(defn album-info [token metadata]
+(defn album-info [token {:keys [artist album] :as metadata}]
   (let [{:keys [cover_image master_url year]}
         (->> (search-album token metadata)
              :results
              first)
         {:keys [tracklist]} (api-get token master_url)]
-    (merge metadata {:link master_url
-                     :image cover_image
-                     :year year
-                     :tracks (map (fn [{:keys [title position]}]
-                                    {:title title, :number position})
-                                  tracklist)})))
+    (->  metadata
+         (merge {:link master_url
+                 :image cover_image
+                 :year year
+                 :tracks (map (fn [{:keys [title position]}]
+                                {:title title
+                                 :artist artist
+                                 :album album
+                                 :number position
+                                 :year year})
+                              tracklist)})
+         (dissoc :title :filename))))
