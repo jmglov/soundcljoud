@@ -17,6 +17,7 @@
                             (map (fn [{:keys [filename title]}]
                                    [(normalise-title title) filename]))
                             (into {}))
+        token (or token (discogs/load-token))
         album-info (discogs/album-info token (first tracks))]
     (update album-info :tracks
             (fn [ts]
