@@ -11,6 +11,39 @@ img {
   max-width: 100%;
 }
 
+svg.control {
+  width: 32px;
+  height: 32px;
+}
+
+path.drop-shadow {
+  fill: #f77e00;
+}
+
+path.drop-shadow-off {
+  fill: #4b4743;
+}
+
+path.bg {
+  fill: #ff9800;
+}
+
+path.bg-off {
+  fill: #7a736a;
+}
+
+path.fg {
+  fill: #fafafa;
+}
+
+path.shine {
+  fill: #ffbd52;
+}
+
+path.shine-off {
+  fill: #918e8a;
+}
+
 #wrapper {
   max-width: 960px;
   margin: 2em auto;
@@ -33,9 +66,10 @@ img {
     display: flex;
   }
 
-  #player {
+  #ui {
     display: flex;
     gap: 3%;
+    width: 100%;
   }
 
   #cover-image {
@@ -44,6 +78,6 @@ img {
   }
 
   #controls {
-    width: 25%;
+    width: 40%;
   }
 }
