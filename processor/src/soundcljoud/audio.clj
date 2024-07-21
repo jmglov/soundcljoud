@@ -37,7 +37,8 @@
         mp3-file (str/replace wav-file ".wav" ".mp3")
         ffmpeg-args ["ffmpeg" "-i" wav-file
                      "-vn"  ; no video
-                     "-q:a" "2"  ; dynamic bitrate averaging 192 KB/s
+                     "-b:a" "192k"  ; constant bitrate of 192 KB/s
+                     ;; "-q:a" "2"  ; dynamic bitrate averaging 192 KB/s
                      "-y"  ; overwrite existing files without prompting
                      mp3-file]
         id3v2-args ["id3v2"
