@@ -7,9 +7,47 @@ body {
   padding: 0;
 }
 
-img {
-  max-width: 100%;
+#cover-image {
+  width: 400px;
+  height: 400px;
 }
+
+#wrapper {
+  max-width: 960px;
+  margin: 2em auto;
+}
+
+#player {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#timeline {
+  background-color: #f1f3f4;
+  border-radius: 30px;
+  width: 300px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+#volume {
+  width: 15px;
+  height: 15px;
+}
+
+span.timeline {
+  font-size: 0.75em;
+}
+
+/* canvas.timeline { */
+/*   width: 165px; */
+/*   height: 10px; */
+/* } */
 
 svg.control {
   width: 32px;
@@ -44,15 +82,9 @@ path.shine-off {
   fill: #918e8a;
 }
 
-#wrapper {
-  max-width: 960px;
-  margin: 2em auto;
-}
-
 #controls {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  gap: 3px;
 }
 
 #tracks {
@@ -70,14 +102,5 @@ path.shine-off {
     display: flex;
     gap: 3%;
     width: 100%;
-  }
-
-  #cover-image {
-    margin-right: 5%;
-    max-width: 60%;
-  }
-
-  #controls {
-    width: 40%;
   }
 }

@@ -29,12 +29,15 @@
   <h1>Soundcljoud</h1>
   <div id="wrapper" style="display: none;">
     <div id="ui">
-      <div class="cover-image">
-        <img src="" alt="" />
-      </div>
+      <img id="cover-image" src="" alt="" />
       <div id="player">
         <audio preload="metadata" src=""></audio>
-        <canvas id="timeline" width="100%" height="10px"></canvas>
+        <div id="timeline">
+            <span id="position" class="timeline">00:00 / 05:23</span>
+            <canvas class="timeline" width="165" height="10"></canvas>
+            <img id="volume" src="img/volume.png" />
+            <span id="span" class="timeline">1x</span>
+        </div>
         <div id="controls">
 
             <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
