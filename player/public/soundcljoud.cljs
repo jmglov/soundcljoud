@@ -2,7 +2,7 @@
   (:require [clojure.string :as str]
             [promesa.core :as p]))
 
-(def state (atom nil))
+(defonce state (atom nil))
 
 (def colour-played "#ff9800")
 (def colour-buffered "#ffbd52")
@@ -49,6 +49,63 @@
       (.querySelector k)
       (.getAttribute attr)))
 
+(defn init-state [{:keys [tracks] :as album}]
+  (let [track-numbers (range 1 (inc (count tracks)))]
+    {:album album
+     :paused? true
+     :shuffling? false
+     :repeating? false
+     :repeating-all? false
+     :active-track (first track-numbers)
+     :prev-tracks (list)
+     :next-tracks (rest track-numbers)}))
+
+(defn toggle-shuffle [{:keys [album active-track shuffling?] :as state}]
+  (let [num-tracks (count (:tracks album))]
+    (if shuffling?
+      (assoc state
+             :shuffling? false
+             :next-tracks (range (inc active-track) (inc num-tracks))
+             :prev-tracks (range 1 active-track))
+      (assoc state
+             :shuffling? true
+             :next-tracks (->> (range 1 (inc num-tracks))
+                               (remove #(= active-track %))
+                               shuffle)))))
+
+(defn advance-track [{:keys [active-track next-tracks prev-tracks] :as state}]
+  (let [next-track (first next-tracks)]
+    (assoc state
+           :active-track (or next-track active-track)
+           :prev-tracks (cons active-track prev-tracks)
+           :next-tracks (rest next-tracks))))
+
+(defn back-track [{:keys [active-track next-tracks prev-tracks] :as state}]
+  (if-let [prev-track (first prev-tracks)]
+    (assoc state
+           :active-track prev-track
+           :prev-tracks (rest prev-tracks)
+           :next-tracks (cons active-track next-tracks))
+    state))
+
+(defn move-to-track [{:keys [album active-track next-tracks prev-tracks shuffling?] :as state} n]
+  (let [num-tracks (count (:tracks album))
+        next-tracks (cond
+                      (some #(= n %) next-tracks)
+                      (->> next-tracks (drop-while #(not= n %)) rest)
+
+                      shuffling?
+                      next-tracks
+
+                      :else
+                      (range (inc n) (inc num-tracks)))]
+    (assoc state
+           :active-track n
+           :prev-tracks (if shuffling?
+                          (cons active-track prev-tracks)
+                          (range 1 n))
+           :next-tracks next-tracks)))
+
 (defn ->track [item-el]
   {:artist (xml-get item-el "author")
    :title (xml-get item-el "title")
@@ -60,8 +117,7 @@
    :image (xml-get-attr xml "image" "href")
    :tracks (->> (.querySelectorAll xml "item")
                 (map ->track)
-                (sort-by :number))
-   :paused? true})
+                (sort-by :number))})
 
 (defn load-album [path]
   (p/-> (fetch-xml path) ->album))
@@ -104,6 +160,11 @@
    (str "track " num
         " [" (format-pos pos) " / " (format-pos dur) "]")))
 
+(defn playlist->js [state]
+  (-> state
+      (select-keys [:prev-tracks :active-track :next-tracks])
+      clj->js))
+
 (defn get-buffers []
   (let [buffered (.-buffered (get-el "audio"))]
     (->> (range (.-length buffered))
@@ -142,40 +203,22 @@
     (set! (.-fillStyle ctx) "black")
     (.fill ctx)))
 
-(defn activate-track! [{:keys [number src] :as track}]
-  (log "Activating track:" (clj->js track))
-  (let [track-spans (seq (.-children (get-el "#tracks")))
-        audio-el (get-el "audio")
-        {:keys [paused?]} @state]
-    (doseq [span track-spans]
-      (set-styles! span "font-weight: normal;"))
-    (-> track-spans
-        (nth (dec number))
-        (set-styles! "font-weight: bold;"))
-    (set! (.-src audio-el) src)
-    (when-not paused?
-      (.play audio-el)))
-  (display-timeline!)
-  (swap! state assoc :active-track number)
-  track)
-
-(defn track->span [{:keys [number title] :as track}]
-  (let [span (js/document.createElement "span")]
-    (set! (.-innerHTML span) (str number ". " title))
-    (.addEventListener span "click" (partial activate-track! track))
-    span))
-
-(defn display-album! [{:keys [title image tracks] :as album}]
-  (let [header (get-el "h1")
-        cover (get-el "#cover-image")
-        wrapper (get-el "#wrapper")]
-    (set! (.-innerHTML header) title)
-    (set! (.-src cover) image)
-    (->> tracks
-         (map track->span)
-         (set-children! (get-el "#tracks")))
-    (set-styles! wrapper "display: flex;")
-    album))
+(defn activate-track! []
+  (let [{:keys [album active-track paused?]} @state
+        {:keys [src] :as track} (-> album :tracks (nth (dec active-track)))]
+    (log "Activating track:" (clj->js track))
+    (let [track-spans (seq (.-children (get-el "#tracks")))
+          audio-el (get-el "audio")]
+      (doseq [span track-spans]
+        (set-styles! span "font-weight: normal;"))
+      (-> track-spans
+          (nth (dec active-track))
+          (set-styles! "font-weight: bold;"))
+      (set! (.-src audio-el) src)
+      (when-not paused?
+        (.play audio-el)))
+    (display-timeline!)
+    track))
 
 (defn toggle-button! [id src tgt]
   (let [button (get-el id)]
@@ -190,25 +233,40 @@
 (defn turn-on-button! [id]
   (toggle-button! id "-off" ""))
 
+(defn toggle-shuffle! []
+  (let [{:keys [shuffling?]} @state]
+    (if shuffling?
+      (turn-off-button! "#shuffle-button")
+      (turn-on-button! "#shuffle-button"))
+    (swap! state toggle-shuffle))
+  (let [{:keys [shuffling? next-tracks]} @state]
+    (log (str "Shuffle " (if shuffling? "on" "off")
+              "; playlist:")
+         (playlist->js @state))))
+
 (defn advance-track! []
-  (let [{:keys [active-track album]} @state
-        {:keys [tracks]} album
-        last-track? (= active-track (count tracks))]
-    (when-not last-track?
-      (log (str "Advancing to " (format-playback (inc active-track) 0)))
-      (activate-track! (nth tracks active-track)))))
+  (let [{:keys [next-tracks]} @state
+        next-track (first next-tracks)]
+    (when next-track
+      (log (str "Advancing to " (format-playback next-track 0)))
+      (swap! state advance-track)
+      (activate-track!)
+      (log "Playlist:" (playlist->js @state)))))
 
 (defn back-track! []
-  (let [{:keys [active-track album]} @state
-        {:keys [tracks]} album
-        first-track? (= active-track 1)
+  (let [{:keys [active-track prev-tracks]} @state
+        prev-track (first prev-tracks)
         at-start-of-track? (<= (get-playback-position) 1.0)]
-    (if (and at-start-of-track? (not first-track?))
+    (if (and at-start-of-track? prev-track)
       (do
-        (log (str "Moving back to " (format-playback (dec active-track) 0)))
-        (activate-track! (nth tracks (- active-track 2))))
+        (log (str "Moving back to " (format-playback prev-track 0)))
+        (swap! state back-track)
+        (activate-track!)
+        (log "Playlist:" (playlist->js @state)))
       (do
-        (log (str "Moving back to " (format-playback active-track 0)))
+        (log (str "Moving back to " (format-playback active-track 0)
+                  "; playlist:")
+             (playlist->js @state))
         (set-playback-position! 0.0)))))
 
 (defn rewind-track! []
@@ -244,7 +302,8 @@
   (.play (get-el "audio"))
   (swap! state assoc :paused? false)
   (set-styles! "#play-button" "display: none")
-  (set-styles! "#pause-button" "display: inline"))
+  (set-styles! "#pause-button" "display: inline")
+  (log "Playlist:" (playlist->js @state)))
 
 (defn pause-track! []
   (log (str "Pausing at " (format-playback)))
@@ -261,6 +320,17 @@
   (swap! state assoc :paused? true)
   (set-styles! "#play-button" "display: inline")
   (set-styles! "#pause-button" "display: none"))
+
+(defn move-to-track! [n]
+  (log (str "Moving to track " n " from " (format-playback)))
+  (if (= (:active-track @state) n)
+    (do
+      (stop-track!)
+      (play-track!))
+    (do
+      (swap! state move-to-track n)
+      (activate-track!)))
+  (log "Playlist:" (playlist->js @state)))
 
 (defn audio-event-handler
   ([]
@@ -301,27 +371,23 @@
                                    (format-playback)))
                          (f)))))
 
-(defn load-ui! [feed]
-  (p/let [album (load-album feed)
-          audio (get-el "audio")
-          canvas (get-el "canvas.timeline")]
-    (display-album! album)
-    (turn-off-button! "#shuffle-button")
-    (turn-off-button! "#repeat-button")
-    (set-styles! "#pause-button" "display: none")
-    (set-styles! "#repeat-one-button" "display: none")
-    (reset! state {:paused? true, :album album})
-    (->> album
-         :tracks
-         first
-         activate-track!)
-    (add-click-handler! "back" back-track!)
-    (add-click-handler! "rewind" rewind-track!)
-    (add-click-handler! "play" play-track!)
-    (add-click-handler! "pause" pause-track!)
-    (add-click-handler! "stop" stop-track!)
-    (add-click-handler! "fast-forward" fast-forward-track!)
-    (add-click-handler! "next" advance-track!)
+(defn display-buttons! []
+  (turn-off-button! "#shuffle-button")
+  (turn-off-button! "#repeat-button")
+  (set-styles! "#pause-button" "display: none")
+  (set-styles! "#repeat-one-button" "display: none")
+  (add-click-handler! "shuffle" toggle-shuffle!)
+  (add-click-handler! "back" back-track!)
+  (add-click-handler! "rewind" rewind-track!)
+  (add-click-handler! "play" play-track!)
+  (add-click-handler! "pause" pause-track!)
+  (add-click-handler! "stop" stop-track!)
+  (add-click-handler! "fast-forward" fast-forward-track!)
+  (add-click-handler! "next" advance-track!))
+
+(defn init-audio! []
+  (let [audio (get-el "audio")
+        canvas (get-el "canvas.timeline")]
     (.addEventListener audio "ended"
                        (audio-event-handler advance-track!))
     (.addEventListener audio "durationchange"
@@ -331,5 +397,30 @@
     (.addEventListener canvas "mouseup" seek-handler)
     (.addEventListener canvas "mouseleave" seek-handler)))
 
-(load-ui! "http://localhost:1341/Garth+Brooks/Fresh+Horses/album.rss")
+(defn track->span [{:keys [number title] :as track}]
+  (let [span (js/document.createElement "span")]
+    (set! (.-innerHTML span) (str number ". " title))
+    (.addEventListener span "click" (partial move-to-track! number))
+    span))
 
+(defn display-album! [{:keys [title image tracks] :as album}]
+  (let [header (get-el "h1")
+        cover (get-el "#cover-image")
+        wrapper (get-el "#wrapper")]
+    (set! (.-innerHTML header) title)
+    (set! (.-src cover) image)
+    (->> tracks
+         (map track->span)
+         (set-children! (get-el "#tracks")))
+    (set-styles! wrapper "display: flex;")
+    album))
+
+(defn load-ui! [feed]
+  (p/let [album (load-album feed)]
+    (reset! state (init-state album))
+    (init-audio!)
+    (display-album! album)
+    (display-buttons!)
+    (activate-track!)))
+
+(load-ui! "http://localhost:1341/Garth+Brooks/Fresh+Horses/album.rss")
