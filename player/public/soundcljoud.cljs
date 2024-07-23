@@ -153,7 +153,8 @@
    :src (xml-get-attr item-el "enclosure" "url")})
 
 (defn ->album [xml]
-  {:title (xml-get xml "title")
+  {:artist (xml-get xml "author")
+   :title (xml-get xml "title")
    :image (xml-get-attr xml "image" "href")
    :tracks (->> (.querySelectorAll xml "item")
                 (map ->track)
@@ -243,12 +244,20 @@
     (set! (.-fillStyle ctx) "black")
     (.fill ctx)))
 
+(defn set-metadata! [album track]
+  (set! (.-metadata js/navigator.mediaSession)
+        (js/MediaMetadata. (clj->js {:title (:title track)
+                                     :artist (:artist track)
+                                     :album (:title album)
+                                     :artwork [{:src (:image album)}]}))))
+
 (defn activate-track! []
   (let [{:keys [album active-track paused?]} @state
-        {:keys [src] :as track} (-> album :tracks (nth (dec active-track)))]
+        {:keys [artist title src] :as track} (-> album :tracks (nth (dec active-track)))]
     (log "Activating track:" (clj->js track))
     (let [track-spans (seq (.-children (get-el "#tracks")))
           audio-el (get-el "audio")]
+      (set! (.-title audio-el) (str artist " - " title))
       (doseq [span track-spans]
         (set-styles! span "font-weight: normal;"))
       (-> track-spans
@@ -258,6 +267,7 @@
       (when-not paused?
         (.play audio-el)))
     (display-timeline!)
+    (set-metadata! album track)
     track))
 
 (defn toggle-button! [id src tgt]
@@ -487,10 +497,10 @@
     (.addEventListener span "click" (partial move-to-track! number))
     span))
 
-(defn display-album! [{:keys [title image tracks] :as album}]
+(defn display-album! [{:keys [artist title image tracks] :as album}]
   (let [cover (get-el "#cover-image")
         wrapper (get-el "#wrapper")]
-    (set! (.-innerHTML (get-el "#title")) title)
+    (set! (.-innerHTML (get-el "#title")) (str artist " - " title))
     (set! (.-src cover) image)
     (->> tracks
          (map track->span)
