@@ -60,6 +60,20 @@
      :prev-tracks (list)
      :next-tracks (rest track-numbers)}))
 
+(defn toggle-repeat [{:keys [repeating? repeating-all?] :as state}]
+  (cond
+    repeating-all?
+    (assoc state
+           :repeating? true
+           :repeating-all? false)
+
+    repeating?
+    (assoc state :repeating? false)
+
+
+    :else
+    (assoc state :repeating-all? true)))
+
 (defn toggle-shuffle [{:keys [album active-track shuffling?] :as state}]
   (let [num-tracks (count (:tracks album))]
     (if shuffling?
@@ -79,6 +93,26 @@
            :active-track (or next-track active-track)
            :prev-tracks (cons active-track prev-tracks)
            :next-tracks (rest next-tracks))))
+
+(defn auto-advance-track [{:keys [active-track next-tracks prev-tracks
+                                  repeating? repeating-all?]
+                           :as state}]
+  (let [next-track (first next-tracks)]
+    (cond
+      repeating?
+      state
+
+      (and repeating-all? (not next-track))
+      (let [prev-tracks (cons active-track prev-tracks)
+            next-tracks (rest (reverse prev-tracks))
+            active-track (first (reverse prev-tracks))]
+        (assoc state
+               :active-track active-track
+               :next-tracks next-tracks
+               :prev-tracks prev-tracks))
+
+      :else
+      (advance-track state))))
 
 (defn back-track [{:keys [active-track next-tracks prev-tracks] :as state}]
   (if-let [prev-track (first prev-tracks)]
@@ -160,10 +194,10 @@
    (str "track " num
         " [" (format-pos pos) " / " (format-pos dur) "]")))
 
-(defn playlist->js [state]
+(defn format-playlist [state]
   (-> state
       (select-keys [:prev-tracks :active-track :next-tracks])
-      clj->js))
+      pr-str))
 
 (defn get-buffers []
   (let [buffered (.-buffered (get-el "audio"))]
@@ -233,6 +267,29 @@
 (defn turn-on-button! [id]
   (toggle-button! id "-off" ""))
 
+(defn toggle-repeat! []
+  (let [{:keys [repeating? repeating-all?]} (swap! state toggle-repeat)]
+    (cond
+      repeating-all?
+      (do
+        (log "Repeating all")
+        (set-styles! "#repeat-button" "display: inline")
+        (set-styles! "#repeat-one-button" "display: none")
+        (turn-on-button! "#repeat-button"))
+
+      repeating?
+      (do
+        (log "Repeating one")
+        (set-styles! "#repeat-button" "display: none")
+        (set-styles! "#repeat-one-button" "display: inline")
+        (turn-off-button! "#repeat-button"))
+
+      :else
+      (do
+        (log "Repeat off")
+        (set-styles! "#repeat-one-button" "display: none")
+        (set-styles! "#repeat-button" "display: inline")))))
+
 (defn toggle-shuffle! []
   (let [{:keys [shuffling?]} @state]
     (if shuffling?
@@ -242,7 +299,7 @@
   (let [{:keys [shuffling? next-tracks]} @state]
     (log (str "Shuffle " (if shuffling? "on" "off")
               "; playlist:")
-         (playlist->js @state))))
+         (format-playlist @state))))
 
 (defn advance-track! []
   (let [{:keys [next-tracks]} @state
@@ -251,7 +308,18 @@
       (log (str "Advancing to " (format-playback next-track 0)))
       (swap! state advance-track)
       (activate-track!)
-      (log "Playlist:" (playlist->js @state)))))
+      (log "Playlist:" (format-playlist @state)))))
+
+(defn auto-advance-track! []
+  (log (str "Ended " (format-playback)))
+  (let [cur-track (:active-track @state)
+        {:keys [active-track]} (swap! state auto-advance-track)]
+    (if (= cur-track active-track)
+      (log "Playlist:" (format-playlist @state))
+      (do
+        (activate-track!)
+        (log (str "Advanced to track " active-track "; playlist:")
+             (format-playlist @state))))))
 
 (defn back-track! []
   (let [{:keys [active-track prev-tracks]} @state
@@ -262,11 +330,11 @@
         (log (str "Moving back to " (format-playback prev-track 0)))
         (swap! state back-track)
         (activate-track!)
-        (log "Playlist:" (playlist->js @state)))
+        (log "Playlist:" (format-playlist @state)))
       (do
         (log (str "Moving back to " (format-playback active-track 0)
                   "; playlist:")
-             (playlist->js @state))
+             (format-playlist @state))
         (set-playback-position! 0.0)))))
 
 (defn rewind-track! []
@@ -303,7 +371,7 @@
   (swap! state assoc :paused? false)
   (set-styles! "#play-button" "display: none")
   (set-styles! "#pause-button" "display: inline")
-  (log "Playlist:" (playlist->js @state)))
+  (log "Playlist:" (format-playlist @state)))
 
 (defn pause-track! []
   (log (str "Pausing at " (format-playback)))
@@ -330,7 +398,7 @@
     (do
       (swap! state move-to-track n)
       (activate-track!)))
-  (log "Playlist:" (playlist->js @state)))
+  (log "Playlist:" (format-playlist @state)))
 
 (defn audio-event-handler
   ([]
@@ -371,7 +439,7 @@
                                    (format-playback)))
                          (f)))))
 
-(defn display-buttons! []
+(defn init-buttons! []
   (turn-off-button! "#shuffle-button")
   (turn-off-button! "#repeat-button")
   (set-styles! "#pause-button" "display: none")
@@ -383,13 +451,15 @@
   (add-click-handler! "pause" pause-track!)
   (add-click-handler! "stop" stop-track!)
   (add-click-handler! "fast-forward" fast-forward-track!)
-  (add-click-handler! "next" advance-track!))
+  (add-click-handler! "next" advance-track!)
+  (add-click-handler! "repeat" toggle-repeat!)
+  (add-click-handler! "repeat-one" toggle-repeat!))
 
 (defn init-audio! []
   (let [audio (get-el "audio")
         canvas (get-el "canvas.timeline")]
     (.addEventListener audio "ended"
-                       (audio-event-handler advance-track!))
+                       (audio-event-handler auto-advance-track!))
     (.addEventListener audio "durationchange"
                        (audio-event-handler display-timeline!))
     (.addEventListener audio "timeupdate"
@@ -420,7 +490,7 @@
     (reset! state (init-state album))
     (init-audio!)
     (display-album! album)
-    (display-buttons!)
+    (init-buttons!)
     (activate-track!)))
 
 (load-ui! "http://localhost:1341/Garth+Brooks/Fresh+Horses/album.rss")
