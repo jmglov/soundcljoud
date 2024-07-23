@@ -377,6 +377,8 @@
   (swap! state assoc :paused? false)
   (set-styles! "#play-button" "display: none")
   (set-styles! "#pause-button" "display: inline")
+  (turn-on-button! "#stop-button")
+  (.focus (get-el "#pause-button"))
   (log "Playlist:" (format-playlist @state)))
 
 (defn pause-track! []
@@ -384,7 +386,8 @@
   (.pause (get-el "audio"))
   (swap! state assoc :paused? true)
   (set-styles! "#play-button" "display: inline")
-  (set-styles! "#pause-button" "display: none"))
+  (set-styles! "#pause-button" "display: none")
+  (.focus (get-el "#play-button")))
 
 (defn stop-track! []
   (log (str "Stopping at " (format-playback)))
@@ -393,7 +396,9 @@
     (set! (.-currentTime audio) 0.0))
   (swap! state assoc :paused? true)
   (set-styles! "#play-button" "display: inline")
-  (set-styles! "#pause-button" "display: none"))
+  (set-styles! "#pause-button" "display: none")
+  (turn-off-button! "#stop-button")
+  (.focus (get-el "#play-button")))
 
 (defn move-to-track! [n]
   (log (str "Moving to track " n " from " (format-playback)))
@@ -448,8 +453,10 @@
 (defn init-buttons! []
   (turn-off-button! "#shuffle-button")
   (turn-off-button! "#repeat-button")
+  (turn-off-button! "#stop-button")
   (set-styles! "#pause-button" "display: none")
   (set-styles! "#repeat-one-button" "display: none")
+  (.focus (get-el "#play-button"))
   (add-click-handler! "shuffle" toggle-shuffle!)
   (add-click-handler! "back" back-track!)
   (add-click-handler! "rewind" rewind-track!)

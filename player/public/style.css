@@ -48,6 +48,45 @@ span.timeline {
   font-size: 0.75em;
 }
 
+/* Accessible buttons borrowed with pride from: */
+/* https://www.freecodecamp.org/news/how-to-make-your-fancy-svg-button-accessible-83c9172c3c15/ */
+
+#controls {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+
+button {
+  padding: 0px;
+  background: none;
+  border: none;
+  &:focus {
+    padding: 1px;
+    background-color: buttonface;
+    outline: 1px solid buttonborder;
+  }
+  &:hover {
+    svg {
+      transform: scale(1.2);
+    }
+  }
+  &::-moz-focus-inner {
+    border: 0;
+  }
+  svg {
+    outline: none;
+    transition: transform 0.15s linear;
+  }
+}
+
+.sr-only {
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  width: 1px;
+}
+
 svg.control {
   width: 32px;
   height: 32px;
@@ -79,11 +118,6 @@ path.shine {
 
 path.shine-off {
   fill: #918e8a;
-}
-
-#controls {
-  display: flex;
-  gap: 3px;
 }
 
 #tracks {
