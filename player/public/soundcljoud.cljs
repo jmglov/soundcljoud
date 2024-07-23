@@ -488,10 +488,9 @@
     span))
 
 (defn display-album! [{:keys [title image tracks] :as album}]
-  (let [header (get-el "h1")
-        cover (get-el "#cover-image")
+  (let [cover (get-el "#cover-image")
         wrapper (get-el "#wrapper")]
-    (set! (.-innerHTML header) title)
+    (set! (.-innerHTML (get-el "#title")) title)
     (set! (.-src cover) image)
     (->> tracks
          (map track->span)

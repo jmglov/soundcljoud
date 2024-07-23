@@ -11,6 +11,22 @@ body {
   cursor: pointer;
 }
 
+#header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 400px; /* will be overriden for wide screens */
+}
+
+#title {
+  font-size: 2em;
+}
+
+#logo {
+  height: 64px;
+  width: 64px;
+}
+
 #cover-image {
   width: 400px;
   height: 400px;
@@ -129,6 +145,10 @@ path.shine-off {
 @media screen and (min-width: 900px) {
   #wrapper {
     display: flex;
+  }
+
+  #header {
+    max-width: 100%;
   }
 
   #ui {
