@@ -28,8 +28,7 @@ body {
 }
 
 #cover-image {
-  width: 400px;
-  height: 400px;
+  max-width: 100%;
 }
 
 #wrapper {
@@ -38,9 +37,11 @@ body {
 }
 
 #player {
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  align-items: center;
+  gap: 10px;
 }
 
 #timeline {
@@ -50,6 +51,7 @@ body {
   height: 55px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   padding-left: 15px;
   padding-right: 15px;
@@ -139,21 +141,30 @@ path.shine-off {
 #tracks {
   display: flex;
   flex-direction: column;
+  align-self: flex-start;
   gap: 3px;
 }
 
 @media screen and (min-width: 900px) {
+  #header {
+    max-width: 100%;
+  }
+
   #wrapper {
     display: flex;
   }
 
-  #header {
-    max-width: 100%;
+  #cover-image {
+    max-width: 400px;
   }
 
   #ui {
     display: flex;
     gap: 3%;
     width: 100%;
+  }
+
+  #player {
+    margin-top: 0px;
   }
 }
