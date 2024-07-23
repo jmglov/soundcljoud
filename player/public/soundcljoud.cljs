@@ -30,6 +30,12 @@
 (defn set-styles! [el styles]
   (set! (.-style (get-el el)) styles))
 
+(defn add-class! [el cls]
+  (-> el (.-classList) (.add cls)))
+
+(defn remove-class! [el cls]
+  (-> el (.-classList) (.remove cls)))
+
 (defn parse-xml [xml-str]
   (.parseFromString (js/window.DOMParser.) xml-str "text/xml"))
 
@@ -258,8 +264,8 @@
   (let [button (get-el id)]
     (doseq [cls ["drop-shadow" "bg" "shine"]
             p (.querySelectorAll button (str "." cls src))]
-      (-> p (.-classList) (.add (str cls tgt)))
-      (-> p (.-classList) (.remove (str cls src))))))
+      (add-class! p (str cls tgt))
+      (remove-class! p (str cls src)))))
 
 (defn turn-off-button! [id]
   (toggle-button! id "" "-off"))
@@ -470,6 +476,7 @@
 (defn track->span [{:keys [number title] :as track}]
   (let [span (js/document.createElement "span")]
     (set! (.-innerHTML span) (str number ". " title))
+    (add-class! span "clickable")
     (.addEventListener span "click" (partial move-to-track! number))
     span))
 

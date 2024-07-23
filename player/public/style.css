@@ -7,6 +7,10 @@ body {
   padding: 0;
 }
 
+.clickable {
+  cursor: pointer;
+}
+
 #cover-image {
   width: 400px;
   height: 400px;
@@ -43,11 +47,6 @@ body {
 span.timeline {
   font-size: 0.75em;
 }
-
-/* canvas.timeline { */
-/*   width: 165px; */
-/*   height: 10px; */
-/* } */
 
 svg.control {
   width: 32px;
