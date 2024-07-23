@@ -506,4 +506,4 @@
     (init-buttons!)
     (activate-track!)))
 
-(load-ui! "http://localhost:1341/Garth+Brooks/Fresh+Horses/album.rss")
+(set! (.-loadUI js/window) load-ui!)
