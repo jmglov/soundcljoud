@@ -18,6 +18,7 @@
         episode (update episode :description
                         selmer/render (assoc opts :episode episode))]
     (fs/create-dirs (fs/parent episode-file))
+    (println (format "Writing episode page %s" episode-file))
     (->> (selmer/render template (-> opts
                                      (assoc :episode episode)
                                      update-soundcljoud-opts))
@@ -27,17 +28,21 @@
   [{:keys [episodes base-dir src-dir] :as opts}]
   (doseq [{:keys [audio-file transcript-file path] :as episode}
           (->> episodes
-               (filter #(or (:include-previews? opts)
+               (filter #(or (:include-previews opts)
                             (not (:preview? %)))))]
     (doseq [filename [audio-file transcript-file]
             :let [src (fs/path base-dir (fs/file-name path) filename)
                   dst (format "%s%s/%s" src-dir path filename)]]
       (fs/create-dirs (fs/parent dst))
-      (fs/copy src dst {:replace-existing true}))
+      (when (or (not (fs/exists? dst))
+                (not= (fs/size src) (fs/size dst)))
+        (println (format "Copying %s => %s" (str src) (str dst)))
+        (fs/copy src dst {:replace-existing true})))
     (write-episode-page! opts episode)))
 
 (defn write-rss-feed! [{:keys [out-dir feed-file] :as opts}]
   (let [dst (fs/file (format "%s%s" out-dir feed-file))]
     (fs/create-dirs (fs/parent dst))
+    (println (format "Writing RSS feed %s" dst))
     (->> (rss/podcast-feed opts)
          (spit dst))))
