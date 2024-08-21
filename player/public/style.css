@@ -7,27 +7,7 @@ body {
   padding: 0;
 }
 
-.clickable {
-  cursor: pointer;
-}
-
-#header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 400px; /* will be overriden for wide screens */
-}
-
-#title {
-  font-size: 2em;
-}
-
-#logo {
-  height: 64px;
-  width: 64px;
-}
-
-#cover-image {
+img {
   max-width: 100%;
 }
 
@@ -36,135 +16,34 @@ body {
   margin: 2em auto;
 }
 
-#player {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-#timeline {
-  background-color: #f1f3f4;
-  border-radius: 30px;
-  width: 300px;
-  height: 55px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding-left: 15px;
-  padding-right: 15px;
-}
-
-#volume {
-  width: 15px;
-  height: 15px;
-}
-
-span.timeline {
-  font-size: 0.75em;
-}
-
-/* Accessible buttons borrowed with pride from: */
-/* https://www.freecodecamp.org/news/how-to-make-your-fancy-svg-button-accessible-83c9172c3c15/ */
-
 #controls {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   gap: 5px;
-}
-
-button {
-  padding: 0px;
-  background: none;
-  border: none;
-  &:focus {
-    padding: 1px;
-    background-color: buttonface;
-    outline: 1px solid buttonborder;
-  }
-  &:hover {
-    svg {
-      transform: scale(1.2);
-    }
-  }
-  &::-moz-focus-inner {
-    border: 0;
-  }
-  svg {
-    outline: none;
-    transition: transform 0.15s linear;
-  }
-}
-
-.sr-only {
-  height: 1px;
-  overflow: hidden;
-  position: absolute;
-  width: 1px;
-}
-
-svg.control {
-  width: 32px;
-  height: 32px;
-}
-
-path.drop-shadow {
-  fill: #f77e00;
-}
-
-path.drop-shadow-off {
-  fill: #4b4743;
-}
-
-path.bg {
-  fill: #ff9800;
-}
-
-path.bg-off {
-  fill: #7a736a;
-}
-
-path.fg {
-  fill: #fafafa;
-}
-
-path.shine {
-  fill: #ffbd52;
-}
-
-path.shine-off {
-  fill: #918e8a;
 }
 
 #tracks {
   display: flex;
   flex-direction: column;
-  align-self: flex-start;
   gap: 3px;
 }
 
 @media screen and (min-width: 900px) {
-  #header {
-    max-width: 100%;
-  }
-
   #wrapper {
     display: flex;
   }
 
-  #cover-image {
-    max-width: 400px;
-  }
-
-  #ui {
+  #player {
     display: flex;
     gap: 3%;
-    width: 100%;
   }
 
-  #player {
-    margin-top: 0px;
+  #cover-image {
+    margin-right: 5%;
+    max-width: 60%;
+  }
+
+  #controls {
+    width: 25%;
   }
 }
