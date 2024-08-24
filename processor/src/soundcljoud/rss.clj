@@ -41,6 +41,8 @@
                      (assoc :datetime-now (now))
                      (update :episodes (fn [episodes]
                                          (->> episodes
+                                              (sort-by :number)
+                                              reverse
                                               (filter #(or (:include-previews opts)
                                                            (not (:preview? %))))
                                               (map (partial update-episode opts))))))))
