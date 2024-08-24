@@ -26,9 +26,12 @@
 (defn kebab->snake [k]
   (-> k name (str/replace "-" "-")))
 
-(defn update-episode [{:keys [src-dir] :as opts}
+(defn update-episode [{:keys [src-dir description-epilogue] :as opts}
                       {:keys [audio-file description path] :as episode}]
-  (let [filename (format "%s%s/%s" src-dir path audio-file)]
+  (let [filename (format "%s%s/%s" src-dir path audio-file)
+        description (->> [description description-epilogue]
+                         (map str/trim)
+                         (str/join "\n"))]
     (assoc episode
            :audio-filesize (fs/size filename)
            :duration (audio/mp3-duration filename)
