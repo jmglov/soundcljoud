@@ -5,10 +5,26 @@
             [selmer.parser :as selmer]
             [soundcljoud.rss :as rss]))
 
+(defn render-tree [data opts]
+  (cond
+    (string? data) (selmer/render data opts)
+    (vector? data) (->> data
+                        (map #(render-tree % opts))
+                        vec)
+    (sequential? data) (->> data
+                            (map #(render-tree % opts)))
+    (set? data) (->> data
+                     (map #(render-tree % opts))
+                     set)
+    (map? data) (->> data
+                     (map (fn [[k v]] [k (render-tree v opts)]))
+                     (into {}))
+    :else data))
+
 (defn update-soundcljoud-opts [opts]
   (-> (update-in opts [:soundcljoud :opts]
-                 #(-> (json/generate-string %)
-                      (selmer/render opts)))))
+                 #(->> (render-tree % opts)
+                       json/generate-string))))
 
 (defn write-episode-page! [{:keys [episode-template] :as opts}
                                    episode]
