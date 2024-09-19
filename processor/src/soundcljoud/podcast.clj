@@ -41,14 +41,14 @@
          (spit episode-file))))
 
 (defn write-episode-pages!
-  [{:keys [episodes base-dir src-dir] :as opts}]
+  [{:keys [episodes base-dir out-dir] :as opts}]
   (doseq [{:keys [audio-file transcript-file path] :as episode}
           (->> episodes
                (filter #(or (:include-previews opts)
                             (not (:preview? %)))))]
     (doseq [filename [audio-file transcript-file]
             :let [src (fs/path base-dir (fs/file-name path) filename)
-                  dst (format "%s%s/%s" src-dir path filename)]]
+                  dst (format "%s%s/%s" (fs/file base-dir out-dir) path filename)]]
       (fs/create-dirs (fs/parent dst))
       (when (or (not (fs/exists? dst))
                 (not= (fs/size src) (fs/size dst)))
